@@ -1,0 +1,417 @@
+import React, { useMemo, useState } from "react";
+import { Search, Heart, ShoppingBag, User, ChevronDown, Filter, X, Star } from "lucide-react";
+
+// --- Mock Data ---------------------------------------------------------------
+const CATEGORIES = [
+  { name: "Women" },
+  { name: "Men" },
+  { name: "Kids" },
+  { name: "Sarees" },
+  { name: "Lehengas" },
+  { name: "Jewellery" },
+  { name: "Home & Living" },
+  { name: "Beauty" },
+  { name: "Studio" },
+];
+
+const BANNERS = [
+  {
+    title: "Festive Sarees Drop",
+    subtitle: "New Rajshahi, Kanjivaram, Jamdani",
+    cta: "Shop Now",
+    image:
+      "https://images.unsplash.com/photo-1621784563330-ef2fe2d8f3da?q=80&w=1600&auto=format&fit=crop",
+  },
+  {
+    title: "Handcrafted Jewellery",
+    subtitle: "Anti‑tarnish, everyday shine",
+    cta: "Explore",
+    image:
+      "https://images.unsplash.com/photo-1629198735668-81a7262d6eba?q=80&w=1600&auto=format&fit=crop",
+  },
+  {
+    title: "Suit Sets & Combos",
+    subtitle: "Festive bundles under ₹2999",
+    cta: "Browse",
+    image:
+      "https://images.unsplash.com/photo-1519741497674-611481863552?q=80&w=1600&auto=format&fit=crop",
+  },
+];
+
+const ALL_PRODUCTS = Array.from({ length: 16 }).map((_, i) => {
+  const names = [
+    "Bishnupuri Silk Saree",
+    "Soft Jamdani Saree",
+    "Ghicha Tussar Saree",
+    "Semi Mysore Silk",
+    "Pochampally Ikat",
+    "Kashmiri Katan",
+    "Designer Georgette",
+    "Semi Banarasi",
+  ];
+  const name = names[i % names.length];
+  const price = 1999 + (i % 8) * 300;
+  const rating = 3 + ((i * 7) % 20) / 10; // 3.0 – 4.9
+  const shades = ["Rose Gold", "Emerald", "Ivory", "Navy", "Champagne", "Coral"];
+  const color = shades[i % shades.length];
+  const img =
+    i % 2 === 0
+      ? "https://images.unsplash.com/photo-1604881987920-36c9e1b3a9aa?q=80&w=1200&auto=format&fit=crop"
+      : "https://images.unsplash.com/photo-1610440042657-612c54b3d7f5?q=80&w=1200&auto=format&fit=crop";
+  return {
+    id: i + 1,
+    name: `${name} – ${color}`,
+    price,
+    mrp: Math.round(price * 1.4),
+    rating,
+    badge: i % 5 === 0 ? "Bestseller" : i % 7 === 0 ? "New" : null,
+    img,
+    color,
+    category: i % 3 === 0 ? "Sarees" : i % 3 === 1 ? "Jewellery" : "Combos",
+  };
+});
+
+// --- UI Helpers --------------------------------------------------------------
+function Rating({ value }: { value: number }) {
+  const full = Math.floor(value);
+  const half = value - full >= 0.5;
+  const empty = 5 - full - (half ? 1 : 0);
+  return (
+    <div className="flex items-center gap-0.5 text-xs">
+      {Array.from({ length: full }).map((_, i) => (
+        <Star key={`f-${i}`} className="w-3.5 h-3.5 fill-current" />
+      ))}
+      {half && <Star className="w-3.5 h-3.5" />}
+      {Array.from({ length: empty }).map((_, i) => (
+        <Star key={`e-${i}`} className="w-3.5 h-3.5 opacity-30" />
+      ))}
+      <span className="ml-1 opacity-70">{value.toFixed(1)}</span>
+    </div>
+  );
+}
+
+function Badge({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="text-[10px] uppercase tracking-wider bg-black text-white px-2 py-0.5 rounded-full">
+      {children}
+    </span>
+  );
+}
+
+// --- MAIN -------------------------------------------------------------------
+export default function SisuuMyntraStyle() {
+  const [query, setQuery] = useState("");
+  const [menu, setMenu] = useState<string | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
+  const [priceCap, setPriceCap] = useState(6000);
+  const [activeCats, setActiveCats] = useState<string[]>([]);
+
+  const products = useMemo(() => {
+    return ALL_PRODUCTS.filter((p) =>
+      p.name.toLowerCase().includes(query.toLowerCase()) &&
+      p.price <= priceCap &&
+      (activeCats.length === 0 || activeCats.includes(p.category))
+    );
+  }, [query, priceCap, activeCats]);
+
+  // banner index via hash to avoid timers in preview
+  const bannerIndex = 0;
+  const banner = BANNERS[bannerIndex];
+
+  function toggleCat(cat: string) {
+    setActiveCats((prev) =>
+      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-white text-gray-900">
+      {/* Top Announcement */}
+      <div className="w-full text-center text-xs py-2 bg-neutral-900 text-white">
+        Extra ₹200 off on orders above ₹1999 • Use code <b>SISUU200</b>
+      </div>
+
+      {/* Header */}
+      <header className="sticky top-0 z-40 bg-white/90 backdrop-blur border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="h-16 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-8">
+              <a href="#" className="font-black text-2xl tracking-tight">
+                SISUU
+              </a>
+              {/* Primary Nav */}
+              <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
+                {CATEGORIES.map((c) => (
+                  <button
+                    key={c.name}
+                    onMouseEnter={() => setMenu(c.name)}
+                    onMouseLeave={() => setMenu((m) => (m === c.name ? null : m))}
+                    className="uppercase tracking-wide hover:text-pink-600 transition flex items-center gap-1"
+                  >
+                    {c.name}
+                    <ChevronDown className="w-4 h-4 opacity-60" />
+                  </button>
+                ))}
+              </nav>
+            </div>
+
+            {/* Search */}
+            <div className="flex-1 hidden lg:flex max-w-xl">
+              <div className="flex items-center gap-2 w-full bg-neutral-100 rounded-full px-4 py-2">
+                <Search className="w-5 h-5 opacity-60" />
+                <input
+                  className="bg-transparent outline-none flex-1 text-sm"
+                  placeholder="Search for 'Jamdani', 'Kanjivaram', 'Jewellery'…"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Icons */}
+            <div className="flex items-center gap-4">
+              <button className="relative p-2 hover:bg-neutral-100 rounded-full" aria-label="Wishlist">
+                <Heart className="w-5 h-5" />
+              </button>
+              <button className="relative p-2 hover:bg-neutral-100 rounded-full" aria-label="Bag">
+                <ShoppingBag className="w-5 h-5" />
+                <span className="absolute -top-1 -right-1 bg-pink-600 text-white text-[10px] rounded-full px-1.5">2</span>
+              </button>
+              <button className="p-2 hover:bg-neutral-100 rounded-full" aria-label="Profile">
+                <User className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Hover Mega Menu (simple) */}
+        {menu && (
+          <div
+            onMouseEnter={() => setMenu(menu)}
+            onMouseLeave={() => setMenu(null)}
+            className="border-t">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 grid grid-cols-2 md:grid-cols-4 gap-6">
+              {["New In", "Bestsellers", "Under ₹1999", "Wedding Edit", "Workwear", "Festive", "Designer", "Handloom"].map(
+                (s) => (
+                  <div key={s} className="space-y-2">
+                    <h4 className="uppercase text-xs tracking-wider text-neutral-500">{s}</h4>
+                    <ul className="space-y-1 text-sm">
+                      {[
+                        "Rajshahi Silk",
+                        "Kanjivaram",
+                        "Soft Jamdani",
+                        "Ghicha Tussar",
+                        "Semi Mysore Silk",
+                        "Anti‑tarnish Jewellery",
+                      ].map((x) => (
+                        <li key={x} className="hover:text-pink-600 cursor-pointer">
+                          {x}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )
+              )}
+            </div>
+          </div>
+        )}
+      </header>
+
+      {/* Banner */}
+      <section className="relative">
+        <img src={banner.image} alt="Hero banner" className="w-full h-[48vh] object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-7xl">
+          <div className="bg-white/90 backdrop-blur rounded-2xl px-6 py-4 shadow-lg flex items-center justify-between">
+            <div>
+              <h2 className="text-xl md:text-2xl font-semibold">{banner.title}</h2>
+              <p className="text-sm opacity-70">{banner.subtitle}</p>
+            </div>
+            <a href="#catalog" className="px-4 py-2 rounded-full bg-black text-white text-sm font-medium">
+              {banner.cta}
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Filters */}
+        <aside className="lg:col-span-3 space-y-6">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold">Filters</h3>
+            <button className="lg:hidden flex items-center gap-2 px-3 py-2 rounded-full border" onClick={() => setShowFilters(true)}>
+              <Filter className="w-4 h-4" />
+              Show
+            </button>
+          </div>
+
+          <div className="hidden lg:block space-y-6">
+            <FilterPanel priceCap={priceCap} setPriceCap={setPriceCap} activeCats={activeCats} toggleCat={toggleCat} />
+          </div>
+        </aside>
+
+        {/* Catalog */}
+        <section id="catalog" className="lg:col-span-9">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-sm opacity-70">{products.length} products</p>
+            <select className="text-sm border rounded-full px-3 py-2">
+              <option>Recommended</option>
+              <option>Price: Low to High</option>
+              <option>Price: High to Low</option>
+              <option>Rating</option>
+              <option>Newest</option>
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+            {products.map((p) => (
+              <article key={p.id} className="group border rounded-2xl overflow-hidden hover:shadow-md transition">
+                <div className="relative">
+                  {p.badge && (
+                    <div className="absolute left-2 top-2">
+                      <Badge>{p.badge}</Badge>
+                    </div>
+                  )}
+                  <img src={p.img} alt={p.name} className="w-full h-60 object-cover group-hover:scale-[1.02] transition" />
+                  <button className="absolute right-2 top-2 bg-white/90 backdrop-blur p-2 rounded-full shadow">
+                    <Heart className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="p-3">
+                  <h3 className="text-sm font-medium line-clamp-2 min-h-[36px]">{p.name}</h3>
+                  <div className="flex items-center justify-between mt-1">
+                    <Rating value={p.rating} />
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-neutral-100">{p.color}</span>
+                  </div>
+                  <div className="mt-2 flex items-baseline gap-2">
+                    <span className="font-semibold">₹{p.price}</span>
+                    <span className="text-xs line-through opacity-60">₹{p.mrp}</span>
+                    <span className="text-xs text-green-600">{Math.round(((p.mrp - p.price) / p.mrp) * 100)}% OFF</span>
+                  </div>
+                  <button className="mt-3 w-full text-sm font-medium bg-black text-white rounded-xl py-2 hover:opacity-90">
+                    Add to Bag
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      </main>
+
+      {/* Slide‑over Filters (mobile) */}
+      {showFilters && (
+        <div className="fixed inset-0 z-50">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setShowFilters(false)} />
+          <div className="absolute right-0 top-0 bottom-0 w-80 bg-white shadow-xl p-5 overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Filters</h3>
+              <button className="p-2" onClick={() => setShowFilters(false)}>
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <FilterPanel priceCap={priceCap} setPriceCap={setPriceCap} activeCats={activeCats} toggleCat={toggleCat} />
+            <button className="mt-6 w-full bg-black text-white rounded-xl py-2" onClick={() => setShowFilters(false)}>
+              Apply
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Footer */}
+      <footer className="border-t bg-neutral-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 grid grid-cols-2 md:grid-cols-4 gap-6 text-sm">
+          <div>
+            <h4 className="font-semibold mb-2">House of Sisuu</h4>
+            <p className="opacity-70">Fashion with a Purpose. Premium sarees, jewellery & more crafted with love.</p>
+          </div>
+          <div>
+            <h4 className="font-semibold mb-2">Help</h4>
+            <ul className="space-y-1 opacity-80">
+              <li>Track Order</li>
+              <li>Returns & Refunds</li>
+              <li>Shipping</li>
+              <li>Support</li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="font-semibold mb-2">Company</h4>
+            <ul className="space-y-1 opacity-80">
+              <li>About</li>
+              <li>Careers</li>
+              <li>Stores</li>
+              <li>Contact</li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="font-semibold mb-2">Keep in Touch</h4>
+            <p className="opacity-80">Instagram • Pinterest • YouTube</p>
+            <p className="opacity-80 mt-2">© {new Date().getFullYear()} Sisuu</p>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+// --- Components --------------------------------------------------------------
+function FilterPanel({
+  priceCap,
+  setPriceCap,
+  activeCats,
+  toggleCat,
+}: {
+  priceCap: number;
+  setPriceCap: (n: number) => void;
+  activeCats: string[];
+  toggleCat: (c: string) => void;
+}) {
+  const cats = ["Sarees", "Jewellery", "Combos"];
+  return (
+    <div className="space-y-6">
+      <div>
+        <h5 className="font-semibold mb-2">Category</h5>
+        <div className="flex flex-wrap gap-2">
+          {cats.map((c) => (
+            <button
+              key={c}
+              onClick={() => toggleCat(c)}
+              className={`px-3 py-1.5 rounded-full border text-sm ${
+                activeCats.includes(c) ? "bg-black text-white border-black" : "bg-white"
+              }`}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <h5 className="font-semibold mb-2">Price</h5>
+        <div className="flex items-center gap-3">
+          <input
+            type="range"
+            min={999}
+            max={9999}
+            step={100}
+            value={priceCap}
+            onChange={(e) => setPriceCap(Number(e.target.value))}
+            className="w-full"
+          />
+          <span className="text-sm w-20">Up to ₹{priceCap}</span>
+        </div>
+      </div>
+
+      <div>
+        <h5 className="font-semibold mb-2">Occasion</h5>
+        <div className="flex flex-wrap gap-2">
+          {["Festive", "Wedding", "Daily Wear", "Office"].map((o) => (
+            <span key={o} className="px-3 py-1.5 rounded-full bg-neutral-100 text-sm">
+              {o}
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
